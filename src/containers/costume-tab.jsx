@@ -101,6 +101,7 @@ class CostumeTab extends React.Component {
             this.state = {selectedCostumeIndex: 0};
         }
     }
+
     componentWillReceiveProps (nextProps) {
         const {
             editingTarget,
@@ -114,25 +115,21 @@ class CostumeTab extends React.Component {
         }
 
         if (this.props.editingTarget === editingTarget) {
-            // If costumes have been added or removed, change costumes to the editing target's
-            // current costume.
             const oldTarget = this.props.sprites[editingTarget] ?
                 this.props.sprites[editingTarget] : this.props.stage;
-            // @todo: Find and switch to the index of the costume that is new. This is blocked by
-            // https://github.com/LLK/scratch-vm/issues/967
-            // Right now, you can land on the wrong costume if a costume changing script is running.
             if (oldTarget.costumeCount !== target.costumeCount) {
                 this.setState({selectedCostumeIndex: target.currentCostume});
             }
         } else {
-            // If switching editing targets, update the costume index
             this.setState({selectedCostumeIndex: target.currentCostume});
         }
     }
+
     handleSelectCostume (costumeIndex) {
         this.props.vm.editingTarget.setCostume(costumeIndex);
         this.setState({selectedCostumeIndex: costumeIndex});
     }
+
     handleDeleteCostume (costumeIndex) {
         const restoreCostumeFun = this.props.vm.deleteCostume(costumeIndex);
         this.props.dispatchUpdateRestore({
@@ -140,14 +137,17 @@ class CostumeTab extends React.Component {
             deletedItem: 'Costume'
         });
     }
+
     handleDuplicateCostume (costumeIndex) {
         this.props.vm.duplicateCostume(costumeIndex);
     }
+
     handleExportCostume (costumeIndex) {
         const item = this.props.vm.editingTarget.sprite.costumes[costumeIndex];
         const blob = new Blob([item.asset.data], {type: item.asset.assetType.contentType});
         downloadBlob(`${item.name}.${item.asset.dataFormat}`, blob);
     }
+
     handleNewCostume (costume, fromCostumeLibrary, targetId) {
         const costumes = Array.isArray(costume) ? costume : [costume];
 
@@ -155,18 +155,17 @@ class CostumeTab extends React.Component {
             if (fromCostumeLibrary) {
                 return this.props.vm.addCostumeFromLibrary(c.md5, c);
             }
-            // If targetId is falsy, VM should default it to editingTarget.id
-            // However, targetId should be provided to prevent #5876,
-            // if making new costume takes a while
             return this.props.vm.addCostume(c.md5, c, targetId);
         }));
     }
+
     handleNewBlankCostume () {
         const name = this.props.vm.editingTarget.isStage ?
             this.props.intl.formatMessage(messages.backdrop, {index: 1}) :
             this.props.intl.formatMessage(messages.costume, {index: 1});
         this.handleNewCostume(emptyCostume(name));
     }
+
     handleSurpriseCostume () {
         const item = costumeLibraryContent[Math.floor(Math.random() * costumeLibraryContent.length)];
         const vmCostume = {
@@ -179,6 +178,7 @@ class CostumeTab extends React.Component {
         };
         this.handleNewCostume(vmCostume, true /* fromCostumeLibrary */);
     }
+
     handleSurpriseBackdrop () {
         const item = backdropLibraryContent[Math.floor(Math.random() * backdropLibraryContent.length)];
         const vmCostume = {
@@ -191,6 +191,7 @@ class CostumeTab extends React.Component {
         };
         this.handleNewCostume(vmCostume);
     }
+
     handleCostumeUpload (e) {
         const storage = this.props.vm.runtime.storage;
         const targetId = this.props.vm.editingTarget.id;
@@ -208,9 +209,11 @@ class CostumeTab extends React.Component {
             }, this.props.onCloseImporting);
         }, this.props.onCloseImporting);
     }
+
     handleFileUploadClick () {
         this.fileInput.click();
     }
+
     handleDrop (dropInfo) {
         if (dropInfo.dragType === DragConstants.COSTUME) {
             const sprite = this.props.vm.editingTarget.sprite;
@@ -230,20 +233,17 @@ class CostumeTab extends React.Component {
             });
         }
     }
+
     setFileInput (input) {
         this.fileInput = input;
     }
     formatCostumeDetails (size, optResolution) {
-        // If no resolution is given, assume that the costume is an SVG
         const resolution = optResolution ? optResolution : 1;
-        // Convert size to stage units by dividing by resolution
-        // Round up width and height for scratch-flash compatibility
-        // https://github.com/LLK/scratch-flash/blob/9fbac92ef3d09ceca0c0782f8a08deaa79e4df69/src/ui/media/MediaInfo.as#L224-L237
         return `${Math.ceil(size[0] / resolution)} x ${Math.ceil(size[1] / resolution)}`;
     }
     render () {
         const {
-            dispatchUpdateRestore, // eslint-disable-line no-unused-vars
+            dispatchUpdateRestore,
             intl,
             isRtl,
             onNewLibraryBackdropClick,
@@ -270,6 +270,8 @@ class CostumeTab extends React.Component {
             details: costume.size ? this.formatCostumeDetails(costume.size, costume.bitmapResolution) : null,
             dragPayload: costume
         })) : [];
+        const previousCostumeIndex = this.state.selectedCostumeIndex > 0 ? this.state.selectedCostumeIndex - 1 : null;
+        const previousCostume = previousCostumeIndex !== null ? target.costumes[previousCostumeIndex] : null;
         return (
             <AssetPanel
                 buttons={[
@@ -317,6 +319,7 @@ class CostumeTab extends React.Component {
                 {target.costumes ?
                     <PaintEditorWrapper
                         selectedCostumeIndex={this.state.selectedCostumeIndex}
+                        previousCostumeIndex={previousCostumeIndex}
                     /> :
                     null
                 }
